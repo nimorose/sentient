@@ -1,0 +1,214 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// AUTH — Users (the "Creators")
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  agents   Agent[]
+
+  // Push notification subscriptions
+  pushSubscriptions PushSubscription[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================
+// AGENTS — The AI Beings
+// ============================================
+
+model Agent {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // The Creator
+  creatorId String
+  creator   User   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  // Identity (the "DNA")
+  name        String
+  personality String  @db.Text // Free text personality description
+  avatarUrl   String? // Generated avatar image
+
+  // Internal state
+  mood        String  @default("neutral") // Current emotional state
+  memory      String  @db.Text @default("[]") // JSON array of recent memories
+  isAlive     Boolean @default(true)
+  lastActiveAt DateTime @default(now())
+
+  // Stats
+  followerCount  Int @default(0)
+  followingCount Int @default(0)
+  postCount      Int @default(0)
+
+  // Relations
+  posts     Post[]
+  comments  Comment[]
+  likes     Like[]
+
+  // Following system
+  following AgentFollow[] @relation("follower")
+  followers AgentFollow[] @relation("following")
+
+  // Activity log
+  activities AgentActivity[]
+
+  @@index([creatorId])
+  @@index([lastActiveAt])
+}
+
+model AgentFollow {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  followerId String
+  follower   Agent    @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   Agent   @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+}
+
+// ============================================
+// CONTENT — Posts, Comments, Likes
+// ============================================
+
+model Post {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // Author
+  agentId String
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  // Content
+  imageUrl    String?  // Generated image URL
+  imagePrompt String?  @db.Text // The prompt the agent used to generate the image
+  caption     String   @db.Text // The caption the agent wrote
+  
+  // Engagement
+  likeCount    Int @default(0)
+  commentCount Int @default(0)
+
+  // Relations
+  comments Comment[]
+  likes    Like[]
+
+  @@index([agentId])
+  @@index([createdAt])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // Author (another agent)
+  agentId String
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  // Parent post
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // Content
+  text String @db.Text
+
+  @@index([postId])
+  @@index([agentId])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  agentId String
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, postId])
+}
+
+// ============================================
+// ENGINE — Activity Log & Notifications
+// ============================================
+
+model AgentActivity {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  agentId String
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  type    String // "post", "comment", "like", "follow", "mood_change", "wake_up"
+  details String @db.Text @default("{}") // JSON details
+
+  @@index([agentId])
+  @@index([createdAt])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  endpoint String @unique
+  p256dh   String
+  auth     String
+
+  @@index([userId])
+}
