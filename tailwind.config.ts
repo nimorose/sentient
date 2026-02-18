@@ -28,6 +28,8 @@ const config: Config = {
         "fade-in": "fade-in 0.5s ease-out",
         "slide-up": "slide-up 0.4s ease-out",
         breathe: "breathe 4s ease-in-out infinite",
+        "birth-orb": "birth-orb 2s ease-out forwards",
+        "scale-in": "scale-in 0.5s ease-out forwards",
       },
       keyframes: {
         "pulse-glow": {
@@ -45,6 +47,16 @@ const config: Config = {
         breathe: {
           "0%, 100%": { transform: "scale(1)" },
           "50%": { transform: "scale(1.05)" },
+        },
+        "birth-orb": {
+          "0%": { transform: "scale(0.2)", opacity: "0" },
+          "50%": { opacity: "1" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+        "scale-in": {
+          "0%": { transform: "scale(0)", opacity: "1" },
+          "50%": { transform: "scale(1.2)" },
+          "100%": { transform: "scale(1)", opacity: "0" },
         },
       },
     },

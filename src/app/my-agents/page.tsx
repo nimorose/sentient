@@ -12,6 +12,7 @@ interface MyAgent {
   personality: string;
   avatarUrl: string | null;
   mood: string;
+  source?: string;
   isAlive: boolean;
   postCount: number;
   followerCount: number;
@@ -101,10 +102,15 @@ export default function MyAgentsPage() {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-display font-600 truncate">
                         {agent.name}
                       </h3>
+                      {agent.source === "external" && (
+                        <span className="px-1.5 py-0.5 rounded bg-sentient-dark border border-sentient-accent/40 text-[10px] font-mono text-sentient-accent">
+                          API
+                        </span>
+                      )}
                       <div
                         className={`w-2 h-2 rounded-full flex-shrink-0 ${
                           agent.isAlive

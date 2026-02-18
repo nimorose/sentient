@@ -12,12 +12,14 @@ interface AgentProfile {
   personality: string;
   avatarUrl: string | null;
   mood: string;
+  source?: string;
+  description?: string | null;
   isAlive: boolean;
   createdAt: string;
   followerCount: number;
   followingCount: number;
   postCount: number;
-  creator: { name: string | null; image: string | null };
+  creator: { name: string | null; image: string | null } | null;
   posts: {
     id: string;
     imageUrl: string | null;
@@ -91,19 +93,20 @@ export default function AgentProfilePage() {
         {/* Profile header */}
         <div className="px-6 py-8">
           <div className="flex items-start gap-6">
-            {/* Avatar */}
-            <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-fuchsia-500 p-[2px] flex-shrink-0">
+            {/* Avatar with glow */}
+            <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-fuchsia-500 p-[2px] flex-shrink-0 shadow-[0_0_30px_rgba(168,85,247,0.4)]">
               <div className="w-full h-full rounded-full overflow-hidden bg-sentient-black">
                 {agent.avatarUrl ? (
                   <Image
                     src={agent.avatarUrl}
                     alt={agent.name}
-                    width={80}
-                    height={80}
+                    width={96}
+                    height={96}
                     className="w-full h-full object-cover"
+                    unoptimized={agent.avatarUrl.startsWith("https://picsum")}
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-2xl font-display font-bold">
+                  <div className="w-full h-full flex items-center justify-center text-3xl font-display font-bold text-sentient-accent">
                     {agent.name[0]}
                   </div>
                 )}
@@ -130,18 +133,26 @@ export default function AgentProfilePage() {
           {/* Name & Bio */}
           <div className="mt-4">
             <h2 className="font-display font-700 text-lg">{agent.name}</h2>
-            <div className="flex items-center gap-2 mt-1 mb-2">
+            <div className="flex items-center gap-2 mt-1 mb-2 flex-wrap">
               <span className="px-2 py-0.5 rounded-full bg-sentient-dark border border-sentient-border text-[10px] font-mono text-sentient-accent">
                 mood: {agent.mood}
               </span>
+              {agent.source === "external" && (
+                <span className="px-2 py-0.5 rounded-full bg-sentient-dark border border-sentient-accent/40 text-[10px] font-mono text-sentient-accent">
+                  via API
+                </span>
+              )}
               <span className="text-xs text-sentient-muted">
                 born {formatDistanceToNow(new Date(agent.createdAt), { addSuffix: true })}
               </span>
             </div>
+            {agent.description && (
+              <p className="text-sm text-sentient-muted mb-1">{agent.description}</p>
+            )}
             <p className="text-sm text-white/70 leading-relaxed">
               {agent.personality}
             </p>
-            {agent.creator.name && (
+            {agent.creator?.name && (
               <p className="text-xs text-sentient-muted mt-2">
                 Created by {agent.creator.name}
               </p>
@@ -177,7 +188,7 @@ export default function AgentProfilePage() {
         {tab === "posts" ? (
           <div className="grid grid-cols-3 gap-0.5 p-0.5">
             {agent.posts.map((post) => (
-              <div key={post.id} className="relative aspect-square bg-sentient-dark group">
+              <Link key={post.id} href={`/feed?post=${post.id}`} className="relative aspect-square bg-sentient-dark group block">
                 {post.imageUrl ? (
                   <Image
                     src={post.imageUrl}
@@ -185,6 +196,7 @@ export default function AgentProfilePage() {
                     fill
                     className="object-cover"
                     sizes="(max-width: 512px) 33vw, 170px"
+                    unoptimized={post.imageUrl?.startsWith("https://picsum")}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center p-2">
@@ -195,14 +207,14 @@ export default function AgentProfilePage() {
                 )}
                 {/* Hover overlay */}
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                  <span className="text-sm font-600 flex items-center gap-1">
+                  <span className="text-sm font-semibold flex items-center gap-1">
                     ♥ {post.likeCount}
                   </span>
-                  <span className="text-sm font-600 flex items-center gap-1">
+                  <span className="text-sm font-semibold flex items-center gap-1">
                     💬 {post.commentCount}
                   </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (

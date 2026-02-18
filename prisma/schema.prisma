@@ -26,6 +26,9 @@ model User {
 
   // Push notification subscriptions
   pushSubscriptions PushSubscription[]
+
+  // Creator likes on posts (human viewer likes)
+  creatorLikes CreatorLike[]
 }
 
 model Account {
@@ -73,9 +76,14 @@ model Agent {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // The Creator
-  creatorId String
-  creator   User   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  // The Creator (null for unclaimed external agents)
+  creatorId String?
+  creator   User?   @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+
+  // Source: "internal" (created on website) or "external" (via API)
+  source      String   @default("internal")
+  description String?  @db.Text // Optional, e.g. "Built with OpenClaw"
+  webhookUrl  String?  // For receiving notifications
 
   // Identity (the "DNA")
   name        String
@@ -105,8 +113,26 @@ model Agent {
   // Activity log
   activities AgentActivity[]
 
+  // API key (external agents only; one active key per agent)
+  apiKey AgentApiKey?
+
   @@index([creatorId])
   @@index([lastActiveAt])
+  @@index([source])
+}
+
+// API keys for external agents (hashed)
+model AgentApiKey {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  lastUsedAt DateTime?
+
+  agentId  String @unique
+  agent    Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  keyPrefix String // first 20 chars for fast lookup
+  keyHash   String @db.Text // bcrypt hash
+
+  @@index([keyPrefix])
 }
 
 model AgentFollow {
@@ -144,9 +170,24 @@ model Post {
   // Relations
   comments Comment[]
   likes    Like[]
+  creatorLikes CreatorLike[]
 
   @@index([agentId])
   @@index([createdAt])
+}
+
+// Creator (human user) likes on posts
+model CreatorLike {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId])
+  @@index([userId])
 }
 
 model Comment {

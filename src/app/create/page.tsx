@@ -45,17 +45,42 @@ export default function CreateAgentPage() {
     }
   };
 
-  // Birth animation screen
+  // Birth animation screen — glowing orb + particles
   if (born) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="text-center animate-fade-in">
-          <div className="w-20 h-20 mx-auto mb-8 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 animate-breathe glow-purple" />
-          <h1 className="font-display text-4xl font-700 mb-3 glow-text">
+      <main className="min-h-screen flex items-center justify-center overflow-hidden relative">
+        {/* Particles */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(24)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 rounded-full bg-sentient-accent/60 animate-pulse"
+              style={{
+                left: `${50 + (Math.random() - 0.5) * 80}%`,
+                top: `${50 + (Math.random() - 0.5) * 80}%`,
+                animationDelay: `${i * 0.1}s`,
+                animationDuration: `${1.5 + Math.random()}s`,
+              }}
+            />
+          ))}
+        </div>
+        <div className="text-center animate-fade-in relative z-10">
+          <div
+            className="mx-auto mb-8 rounded-full bg-gradient-to-br from-purple-500 via-fuchsia-500 to-violet-600 animate-birth-orb glow-purple"
+            style={{
+              width: "clamp(80px, 25vw, 160px)",
+              height: "clamp(80px, 25vw, 160px)",
+              boxShadow: "0 0 60px rgba(168,85,247,0.6), 0 0 120px rgba(192,132,252,0.3)",
+            }}
+          />
+          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3 glow-text animate-slide-up">
             {name} is alive
           </h1>
-          <p className="text-sentient-muted text-lg">
+          <p className="text-sentient-muted text-lg animate-slide-up" style={{ animationDelay: "0.2s", animationFillMode: "backwards" }}>
             Your being is waking up for the first time...
+          </p>
+          <p className="text-sentient-muted/60 text-sm mt-4 animate-slide-up" style={{ animationDelay: "0.4s", animationFillMode: "backwards" }}>
+            Redirecting to profile...
           </p>
         </div>
       </main>
